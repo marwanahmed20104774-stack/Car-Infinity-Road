@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>سباق السيارات الاحترافي - تحكم موبايل مضبوط</title>
+    <title>سباق السيارات الاحترافي - تحكم موبايل ثابت ومضمون</title>
     <style>
         /* --- التصميم العام وجرافيكس اللعبة --- */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            user-select: none; /* منع تحديد النصوص أثناء اللمس السريع */
+            user-select: none; 
             -webkit-user-select: none;
         }
 
@@ -23,6 +23,7 @@
             height: 100vh;
             overflow: hidden;
             color: white;
+            direction: rtl; /* اتجاه النصوص العام عربي */
         }
 
         /* شاشة تسجيل الدخول واختيار المستوى */
@@ -110,7 +111,7 @@
         /* جرافيكس سيارة اللاعب */
         .player-car {
             position: absolute;
-            bottom: 120px; /* مرفوعة لتناسب أزرار الموبايل */
+            bottom: 130px; 
             left: 185px;
             width: 50px;
             height: 95px;
@@ -175,34 +176,45 @@
 
         .dashboard span { color: #00f2fe; font-weight: bold; }
 
-        /* أزرار التحكم باللمس الخاصة بالموبايل */
+        /* منطقة أزرار الموبايل الثابتة هندسياً رغماً عن المتصفح */
         .mobile-controls {
             position: absolute;
-            bottom: 15px;
+            bottom: 20px;
             left: 0;
             width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 20px;
+            height: 80px;
             z-index: 10;
+            direction: ltr !important; /* إجبار منطقة الأزرار على نظام الاتجاه العالمي لمنع الانعكاس */
         }
 
         .touch-btn {
-            width: 75px;
-            height: 75px;
-            background: rgba(255, 255, 255, 0.15);
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(5px);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.4);
             border-radius: 50%;
             color: white;
-            font-size: 30px;
+            font-size: 32px;
             font-weight: bold;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
             touch-action: none; 
         }
+
+        /* زر اليسار: مثبت في يسار الشاشة تماماً (Left) ويحمل سهم لليسار */
+        #leftBtn {
+            left: 25px;
+        }
+
+        /* زر اليمين: مثبت في يمين الشاشة تماماً (Right) ويحمل سهم لليمين */
+        #rightBtn {
+            right: 25px;
+        }
+
         .touch-btn:active {
             background: linear-gradient(45deg, #0072ff, #00f2fe);
             transform: scale(0.9);
@@ -225,7 +237,7 @@
         }
         .game-over h2 { color: #ff2a2a; margin-bottom: 10px; }
 
-        /* إخفاء أزرار الموبايل تلقائياً على الكمبيوتر */
+        /* إخفاء أزرار الموبايل على الكمبيوتر */
         @media (min-width: 768px) {
             .mobile-controls {
                 display: none;
@@ -273,9 +285,7 @@
             <div class="player-car" id="player"></div>
 
             <div class="mobile-controls">
-                <div class="touch-btn" id="leftBtn">→</div>
-                <div class="touch-btn" id="rightBtn">←</div>
-            </div>
+                <div class="touch-btn" id="leftBtn">←</div>  <div class="touch-btn" id="rightBtn">→</div> </div>
         </div>
     </div>
 
@@ -394,10 +404,13 @@
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { keys[e.key] = false; }
         });
 
-        // --- أزرار الموبايل باللمس (تم تصليح وربط كل زر بالاتجاه الفعلي الصحيح هنا) ---
+        // --- أحداث اللمس للموبايل (مربوطة بالـ ID الحقيقي والفيزيائي للزرار) ---
+        
+        // زر اليسار الفيزيائي (موجود يساراً) -> يحرك السيارة يساراً
         leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); keys.ArrowLeft = true; });
         leftBtn.addEventListener('touchend', () => { keys.ArrowLeft = false; });
         
+        // زر اليمين الفيزيائي (موجود يميناً) -> يحرك السيارة يميناً
         rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); keys.ArrowRight = true; });
         rightBtn.addEventListener('touchend', () => { keys.ArrowRight = false; });
 
