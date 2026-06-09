@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>سباق السيارات الاحترافي - تحكم موبايل مضبوط</title>
+    <style>
+        /* --- التصميم العام وجرافيكس اللعبة --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* منع تحديد النصوص أثناء اللمس السريع */
+            -webkit-user-select: none;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e1e2f, #0f0f1a);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            color: white;
+        }
+
+        /* شاشة تسجيل الدخول واختيار المستوى */
+        .auth-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            text-align: center;
+            width: 350px;
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 20;
+        }
+
+        .auth-container h2 { margin-bottom: 15px; color: #00f2fe; }
+        .auth-container p { font-size: 14px; margin-bottom: 10px; color: #ccc; }
+
+        .auth-container input, .auth-container select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+        }
+        
+        .auth-container select option {
+            background-color: #1e1e2f;
+            color: white;
+        }
+
+        .auth-container button, .btn {
+            background: linear-gradient(45deg, #0072ff, #00f2fe);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0,242,254,0.4);
+        }
+        .auth-container button:hover, .btn:hover { transform: scale(1.05); }
+
+        /* منطقة اللعبة */
+        .game-wrapper {
+            display: none; 
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            height: 100vh;
+            max-height: 650px;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(#444, #222); 
+            border-left: 6px double #fff;
+            border-right: 6px double #fff;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+
+        /* خطوط الطريق في الخلفية */
+        .line {
+            position: absolute;
+            width: 6px;
+            height: 90px;
+            background-color: rgba(255, 255, 255, 0.8);
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            z-index: 1;
+        }
+
+        /* جرافيكس سيارة اللاعب */
+        .player-car {
+            position: absolute;
+            bottom: 120px; /* مرفوعة لتناسب أزرار الموبايل */
+            left: 185px;
+            width: 50px;
+            height: 95px;
+            background: linear-gradient(to top, #8b0000, #ff2a2a);
+            border-radius: 12px 12px 8px 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6), 0 0 15px rgba(255,0,0,0.4);
+            z-index: 5;
+        }
+
+        .player-car::before {
+            content: '';
+            position: absolute;
+            top: 25px; left: 6px; width: 38px; height: 18px;
+            background: linear-gradient(#111, #333);
+            border-radius: 4px;
+        }
+        
+        .player-car::after {
+            content: '';
+            position: absolute;
+            top: -2px; width: 8px; height: 5px;
+            background: #fff; left: 7px;
+            box-shadow: 0 0 12px 4px #fff, 28px 0 0 #fff, 28px 0 12px 4px #fff;
+        }
+
+        /* جرافيكس السيارات المنافسة */
+        .enemy-car {
+            position: absolute;
+            width: 50px;
+            height: 95px;
+            border-radius: 12px 12px 8px 8px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+            z-index: 4;
+        }
+        .enemy-car::before {
+            content: '';
+            position: absolute;
+            top: 25px; left: 6px; width: 38px; height: 18px;
+            background: #222; border-radius: 4px;
+        }
+        .enemy-car::after {
+            content: '';
+            position: absolute;
+            bottom: -2px; left: 6px; width: 6px; height: 4px;
+            background: #ff2a2a;
+            box-shadow: 32px 0 0 #ff2a2a;
+        }
+
+        /* لوحة البيانات العلوية */
+        .dashboard {
+            position: absolute;
+            top: -55px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .dashboard span { color: #00f2fe; font-weight: bold; }
+
+        /* أزرار التحكم باللمس الخاصة بالموبايل */
+        .mobile-controls {
+            position: absolute;
+            bottom: 15px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 10;
+        }
+
+        .touch-btn {
+            width: 75px;
+            height: 75px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(5px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            color: white;
+            font-size: 30px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            touch-action: none; 
+        }
+        .touch-btn:active {
+            background: linear-gradient(45deg, #0072ff, #00f2fe);
+            transform: scale(0.9);
+        }
+
+        /* شاشة الخسارة */
+        .game-over {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(15, 15, 26, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 15;
+            width: 85%;
+            border: 2px solid #ff2a2a;
+            box-shadow: 0 0 30px rgba(255,42,42,0.4);
+        }
+        .game-over h2 { color: #ff2a2a; margin-bottom: 10px; }
+
+        /* إخفاء أزرار الموبايل تلقائياً على الكمبيوتر */
+        @media (min-width: 768px) {
+            .mobile-controls {
+                display: none;
+            }
+            .player-car {
+                bottom: 30px; 
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container" id="authScreen">
+        <h2>تسجيل دخول اللاعب</h2>
+        <p>أولاً: أدخل اسمك</p>
+        <input type="text" id="usernameInput" placeholder="اكتب اسمك هنا..." maxlength="15">
+        
+        <p style="margin-top: 15px;">ثانياً: اختر مستوى الصعوبة (Level)</p>
+        <select id="levelSelect">
+            <option value="easy">سهل (Easy)</option>
+            <option value="medium" selected>متوسط (Medium)</option>
+            <option value="hard">صعب (Hard)</option>
+        </select>
+
+        <button onclick="loginPlayer()">دخول وبدء السباق</button>
+    </div>
+
+    <div class="game-wrapper" id="gameWrapper">
+        <div class="dashboard">
+            <div>اللاعب: <span id="playerName">--</span></div>
+            <div>المستوى: <span id="currentLevelDisplay">--</span></div>
+            <div>النقاط: <span id="score">0</span></div>
+            <div>أعلى سكور: <span id="highScore">0</span></div>
+        </div>
+
+        <div class="game-container" id="gameArea">
+            <div class="game-over" id="gameOverScreen">
+                <h2>حادث عنيف! 💥</h2>
+                <p>مجموع نقاطك الجولة دي: <span id="finalScore">0</span></p>
+                <p id="newRecordMsg" style="color: #4CAF50; display: none; font-weight: bold; margin-top: 5px;">رقم قياسي جديد! 🏆</p>
+                <button class="btn" onclick="restartGame()">حاول مرة أخرى</button>
+                <button class="btn" style="background: #555;" onclick="logout()">تغيير الحساب</button>
+            </div>
+
+            <div class="player-car" id="player"></div>
+
+            <div class="mobile-controls">
+                <div class="touch-btn" id="leftBtn">→</div>
+                <div class="touch-btn" id="rightBtn">←</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const authScreen = document.getElementById('authScreen');
+        const gameWrapper = document.getElementById('gameWrapper');
+        const usernameInput = document.getElementById('usernameInput');
+        const levelSelect = document.getElementById('levelSelect');
+        const playerNameDisplay = document.getElementById('playerName');
+        const currentLevelDisplay = document.getElementById('currentLevelDisplay');
+        const scoreDisplay = document.getElementById('score');
+        const highScoreDisplay = document.getElementById('highScore');
+        const gameArea = document.getElementById('gameArea');
+        const player = document.getElementById('player');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScore = document.getElementById('finalScore');
+        const newRecordMsg = document.getElementById('newRecordMsg');
+        
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+
+        let currentUser = "";
+        let score = 0;
+        let highScore = 0;
+        let gameActive = false;
+        
+        let playerX = 185; 
+        let roadSpeed = 4; 
+        const turnSpeed = 6; 
+
+        const keys = {
+            ArrowLeft: false,
+            ArrowRight: false
+        };
+
+        let enemyData = [];
+
+        function loginPlayer() {
+            const name = usernameInput.value.trim();
+            if (name === "") {
+                alert("برجاء إدخال اسمك أولاً!");
+                return;
+            }
+            currentUser = name;
+            playerNameDisplay.innerText = currentUser;
+
+            const selectedLevel = levelSelect.value;
+            if (selectedLevel === "easy") {
+                roadSpeed = 3; 
+                currentLevelDisplay.innerText = "سهل";
+            } else if (selectedLevel === "medium") {
+                roadSpeed = 5; 
+                currentLevelDisplay.innerText = "متوسط";
+            } else if (selectedLevel === "hard") {
+                roadSpeed = 8; 
+                currentLevelDisplay.innerText = "صعب";
+            }
+
+            highScore = localStorage.getItem('carGame_highScore_' + currentUser + '_' + selectedLevel) || 0;
+            highScoreDisplay.innerText = highScore;
+
+            authScreen.style.display = 'none';
+            gameWrapper.style.display = 'block';
+            
+            initGameElements();
+            gameActive = true;
+            updateGame();
+        }
+
+        function initGameElements() {
+            const oldLines = document.querySelectorAll('.line');
+            const oldEnemies = document.querySelectorAll('.enemy-car');
+            oldLines.forEach(l => l.remove());
+            oldEnemies.forEach(e => e.remove());
+            
+            enemyData = [];
+
+            for (let i = 0; i < 5; i++) {
+                let line = document.createElement('div');
+                line.classList.add('line');
+                line.style.top = (i * 160) + 'px';
+                gameArea.appendChild(line);
+            }
+
+            for (let i = 0; i < 3; i++) {
+                let enemy = document.createElement('div');
+                enemy.classList.add('enemy-car');
+                
+                let startX = Math.floor(Math.random() * (gameArea.clientWidth - 65)) + 15;
+                enemy.style.top = ((i * 220) - 400) + 'px';
+                enemy.style.left = startX + 'px';
+                
+                const colors = [
+                    'linear-gradient(to top, #555500, #ffeb3b)', 
+                    'linear-gradient(to top, #004d40, #00bfa5)', 
+                    'linear-gradient(to top, #4a148c, #aa00ff)', 
+                    'linear-gradient(to top, #0d47a1, #29b6f6)'  
+                ];
+                enemy.style.background = colors[i % colors.length];
+                gameArea.appendChild(enemy);
+
+                enemyData.push({
+                    element: enemy,
+                    x: startX,
+                    sideSpeed: (Math.random() * 3) - 1.5, 
+                    changeDirectionTimer: Math.floor(Math.random() * 100) + 50 
+                });
+            }
+        }
+
+        // --- أزرار الكمبيوتر ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { keys[e.key] = true; }
+        });
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { keys[e.key] = false; }
+        });
+
+        // --- أزرار الموبايل باللمس (تم تصليح وربط كل زر بالاتجاه الفعلي الصحيح هنا) ---
+        leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); keys.ArrowLeft = true; });
+        leftBtn.addEventListener('touchend', () => { keys.ArrowLeft = false; });
+        
+        rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); keys.ArrowRight = true; });
+        rightBtn.addEventListener('touchend', () => { keys.ArrowRight = false; });
+
+
+        function updateGame() {
+            if (!gameActive) return;
+
+            const maxRight = gameArea.clientWidth - 65; 
+
+            if (keys.ArrowLeft && playerX > 15) { playerX -= turnSpeed; }
+            if (keys.ArrowRight && playerX < maxRight) { playerX += turnSpeed; }
+            player.style.left = playerX + 'px';
+
+            let lines = document.querySelectorAll('.line');
+            lines.forEach(line => {
+                let top = parseInt(line.style.top);
+                if (top >= 650) { top = -90; }
+                line.style.top = (top + roadSpeed) + 'px';
+            });
+
+            enemyData.forEach(enemy => {
+                let top = parseInt(enemy.element.style.top);
+                
+                if (top >= 650) {
+                    top = -100;
+                    enemy.x = Math.floor(Math.random() * (gameArea.clientWidth - 65)) + 15;
+                    enemy.sideSpeed = (Math.random() * 3) - 1.5; 
+                    enemy.changeDirectionTimer = Math.floor(Math.random() * 100) + 50;
+                    
+                    score += 10;
+                    scoreDisplay.innerText = score;
+                }
+                enemy.element.style.top = (top + roadSpeed) + 'px';
+
+                enemy.x += enemy.sideSpeed;
+                
+                if (enemy.x < 15 || enemy.x > (gameArea.clientWidth - 65)) {
+                    enemy.sideSpeed *= -1; 
+                }
+                enemy.element.style.left = enemy.x + 'px';
+
+                enemy.changeDirectionTimer--;
+                if (enemy.changeDirectionTimer <= 0) {
+                    enemy.sideSpeed = (Math.random() * 3) - 1.5; 
+                    enemy.changeDirectionTimer = Math.floor(Math.random() * 100) + 50; 
+                }
+
+                if (isCollide(player, enemy.element)) {
+                    endGame();
+                }
+            });
+
+            requestAnimationFrame(updateGame);
+        }
+
+        function isCollide(a, b) {
+            let aRect = a.getBoundingClientRect();
+            let bRect = b.getBoundingClientRect();
+            return !((aRect.bottom < bRect.top) || (aRect.top > bRect.bottom) || (aRect.right < bRect.left) || (aRect.left > bRect.right));
+        }
+
+        function endGame() {
+            gameActive = false;
+            finalScore.innerText = score;
+            
+            keys.ArrowLeft = false;
+            keys.ArrowRight = false;
+
+            const selectedLevel = levelSelect.value;
+            if (score > highScore) {
+                highScore = score;
+                highScoreDisplay.innerText = highScore;
+                localStorage.setItem('carGame_highScore_' + currentUser + '_' + selectedLevel, highScore);
+                newRecordMsg.style.display = 'block';
+            } else {
+                newRecordMsg.style.display = 'none';
+            }
+
+            gameOverScreen.style.display = 'block';
+        }
+
+        function restartGame() {
+            score = 0;
+            scoreDisplay.innerText = score;
+            playerX = (gameArea.clientWidth / 2) - 25;
+            player.style.left = playerX + 'px';
+            gameOverScreen.style.display = 'none';
+            initGameElements();
+            gameActive = true;
+            updateGame();
+        }
+
+        function logout() {
+            gameOverScreen.style.display = 'none';
+            gameWrapper.style.display = 'none';
+            authScreen.style.display = 'block';
+            usernameInput.value = "";
+        }
+    </script>
+</body>
+</html>
